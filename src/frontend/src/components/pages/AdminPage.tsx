@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useActor } from "@/hooks/useActor";
 import { useInternetIdentity } from "@/hooks/useInternetIdentity";
 import {
   useGetAllOrders,
@@ -33,6 +34,7 @@ import {
 import {
   AlertTriangle,
   Check,
+  KeyRound,
   Loader2,
   LogIn,
   Package,
@@ -72,7 +74,11 @@ export function AdminPage() {
   const { login, loginStatus, identity, clear } = useInternetIdentity();
   const isLoggingIn = loginStatus === "logging-in";
 
-  const { data: isAdmin, isLoading: isAdminLoading } = useIsCallerAdmin();
+  const {
+    data: isAdmin,
+    isLoading: isAdminLoading,
+    refetch: refetchIsAdmin,
+  } = useIsCallerAdmin();
   const { data: orders, isLoading: ordersLoading } = useGetAllOrders();
   const { data: product, isLoading: productLoading } = useGetProduct();
   const { data: isStripeConfigured } = useIsStripeConfigured();
@@ -84,6 +90,29 @@ export function AdminPage() {
     null,
   );
   const [savingProduct, setSavingProduct] = useState(false);
+  const [adminToken, setAdminToken] = useState("");
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
+
+  const { actor } = useActor();
+
+  const handleAdminTokenSubmit = async () => {
+    if (!actor || !adminToken.trim()) return;
+    setIsInitializing(true);
+    setInitError(null);
+    try {
+      await actor._initializeAccessControlWithSecret(adminToken.trim());
+      await refetchIsAdmin();
+      setAdminToken("");
+    } catch (err) {
+      console.error(err);
+      setInitError(
+        "Invalid admin token. Make sure you're entering the correct CAFFEINE_ADMIN_TOKEN. Try again.",
+      );
+    } finally {
+      setIsInitializing(false);
+    }
+  };
 
   const initProductForm = () => {
     if (product) {
@@ -182,35 +211,80 @@ export function AdminPage() {
     );
   }
 
-  // Not admin
+  // Not admin - show token entry form
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-red-50 border-2 border-red-200 flex items-center justify-center mx-auto mb-6">
-            <AlertTriangle className="h-8 w-8 text-red-500" />
+      <div className="min-h-screen bg-cream flex items-center justify-center px-4 mandala-bg">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-cream rounded-3xl border border-border shadow-warm p-10 text-center max-w-sm w-full"
+        >
+          <div className="w-16 h-16 rounded-full bg-saffron/15 flex items-center justify-center mx-auto mb-6">
+            <KeyRound className="h-8 w-8 text-saffron-deep" />
           </div>
-          <h2 className="font-serif text-2xl font-bold text-brown mb-3">
-            Access Denied
+          <h2 className="font-serif text-2xl font-bold text-brown mb-2">
+            Enter Admin Token
           </h2>
           <p className="font-sans text-sm text-brown/60 mb-6">
-            You don't have admin privileges to access this page.
+            Enter your admin token to access the admin panel. If you were
+            previously denied access, entering the correct token now will
+            upgrade your account.
           </p>
+          <div className="text-left mb-4">
+            <Label className="font-sans text-xs text-brown/60 uppercase tracking-wide mb-1 block">
+              Admin Token
+            </Label>
+            <Input
+              type="password"
+              placeholder="Enter your admin token"
+              value={adminToken}
+              onChange={(e) => setAdminToken(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAdminTokenSubmit();
+              }}
+              className="border-border bg-cream-deep/50 font-sans text-sm text-brown"
+              data-ocid="admin.input"
+            />
+          </div>
+          {initError && (
+            <p
+              className="font-sans text-xs text-red-500 mb-4 text-left"
+              data-ocid="admin.error_state"
+            >
+              {initError}
+            </p>
+          )}
           <Button
-            variant="outline"
-            asChild
-            className="border-saffron/40 text-saffron rounded-full font-sans"
+            onClick={handleAdminTokenSubmit}
+            disabled={isInitializing || !adminToken.trim()}
+            data-ocid="admin.submit_button"
+            className="w-full bg-saffron hover:bg-saffron-deep text-primary-foreground font-sans font-semibold py-5 rounded-full shadow-golden mb-3"
           >
-            <a href="/">← Back to Home</a>
+            {isInitializing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Verifying...
+              </>
+            ) : (
+              "Access Admin Panel"
+            )}
           </Button>
           <Button
             variant="ghost"
             onClick={() => clear()}
-            className="ml-2 text-brown/50 font-sans text-sm"
+            className="w-full text-brown/50 font-sans text-sm"
           >
             Logout
           </Button>
-        </div>
+          <Button
+            variant="ghost"
+            asChild
+            className="w-full text-brown/50 font-sans text-sm mt-1"
+          >
+            <a href="/">← Back to Home</a>
+          </Button>
+        </motion.div>
       </div>
     );
   }

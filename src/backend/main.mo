@@ -2,7 +2,6 @@ import Stripe "stripe/stripe";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 import Iter "mo:core/Iter";
-import Array "mo:core/Array";
 import Map "mo:core/Map";
 import Text "mo:core/Text";
 import Principal "mo:core/Principal";
@@ -10,8 +9,10 @@ import Order "mo:core/Order";
 import Runtime "mo:core/Runtime";
 import OutCall "http-outcalls/outcall";
 import Time "mo:core/Time";
+import Array "mo:core/Array";
 
 actor {
+  // Ghee product
   type GheeProduct = {
     name : Text;
     description : Text;
@@ -19,6 +20,7 @@ actor {
     availableStock : Nat;
   };
 
+  // Order status
   type OrderStatus = {
     #pending;
     #paid;
@@ -26,6 +28,7 @@ actor {
     #delivered;
   };
 
+  // Order record
   type Order = {
     id : Nat;
     customerName : Text;
@@ -86,7 +89,6 @@ actor {
   let orders = Map.empty<Nat, Order>();
 
   public query ({ caller }) func getProduct() : async GheeProduct {
-    // Public access - no authorization needed
     product;
   };
 
@@ -98,7 +100,6 @@ actor {
   };
 
   public shared ({ caller }) func placeOrder(customerName : Text, customerEmail : Text, address : Text, quantity : Nat) : async Nat {
-    // Public access - guests can place orders
     if (quantity == 0) {
       Runtime.trap("Quantity must be greater than 0");
     };
@@ -146,7 +147,6 @@ actor {
   };
 
   public query ({ caller }) func getOrder(orderId : Nat) : async Order {
-    // Require authentication - only authenticated users or admins can view orders
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can view orders");
     };
@@ -154,7 +154,6 @@ actor {
     switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
       case (?order) { 
-        // Additional check: non-admin users can only view orders matching their profile email
         if (not AccessControl.isAdmin(accessControlState, caller)) {
           switch (userProfiles.get(caller)) {
             case (null) { Runtime.trap("Unauthorized: User profile not found") };
@@ -171,12 +170,10 @@ actor {
   };
 
   public query ({ caller }) func getCustomerOrders(email : Text) : async [Order] {
-    // Require authentication - only authenticated users can view order history
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can view order history");
     };
 
-    // Non-admin users can only view their own orders
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       switch (userProfiles.get(caller)) {
         case (null) { Runtime.trap("Unauthorized: User profile not found") };
@@ -189,7 +186,7 @@ actor {
     };
 
     orders.values().toArray().filter<Order>(
-      func(o : Order) : Bool { o.customerEmail == email }
+      func(o) { o.customerEmail == email }
     );
   };
 
@@ -197,7 +194,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can view all orders");
     };
-    orders.values().toArray().sort<Order>();
+    orders.values().toArray();
   };
 
   var stripeConfiguration : ?Stripe.StripeConfiguration = null;
@@ -221,7 +218,6 @@ actor {
   };
 
   public shared ({ caller }) func createCheckoutSession(items : [Stripe.ShoppingItem], successUrl : Text, cancelUrl : Text) : async Text {
-    // Require authentication for payment operations
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can create checkout sessions");
     };
@@ -230,7 +226,6 @@ actor {
   };
 
   public shared ({ caller }) func createStripeCheckout(orderId : Nat, successUrl : Text, cancelUrl : Text) : async Text {
-    // Require authentication for payment operations
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can create checkout sessions");
     };
@@ -238,7 +233,6 @@ actor {
     switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
       case (?order) {
-        // Non-admin users can only create checkout for their own orders
         if (not AccessControl.isAdmin(accessControlState, caller)) {
           switch (userProfiles.get(caller)) {
             case (null) { Runtime.trap("Unauthorized: User profile not found") };
@@ -264,7 +258,6 @@ actor {
   };
 
   public shared ({ caller }) func getStripeSessionStatus(sessionId : Text) : async Stripe.StripeSessionStatus {
-    // Require authentication for payment status checks
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can check session status");
     };
@@ -273,7 +266,6 @@ actor {
   };
 
   public query func transform(input : OutCall.TransformationInput) : async OutCall.TransformationOutput {
-    // Transform function for HTTP outcalls - no authorization needed
     OutCall.transform(input);
   };
 };
