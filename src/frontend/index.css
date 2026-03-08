@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========== FONT FACES ========== */
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/assets/fonts/PlayfairDisplay[wght].woff2") format("woff2-variations");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/assets/fonts/PlayfairDisplay-Italic[wght].woff2") format("woff2-variations");
+  font-weight: 400 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "General Sans";
+  src: url("/assets/fonts/GeneralSans-Variable.woff2") format("woff2-variations");
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("/assets/fonts/Fraunces[SOFT,WONK,opsz,wght].woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ========== DESIGN TOKENS ========== */
+@layer base {
+  :root {
+    --radius: 0.5rem;
+
+    /* Warm cream / off-white background */
+    --background: 0.97 0.015 80;
+    /* Deep warm brown foreground */
+    --foreground: 0.22 0.04 55;
+
+    /* Card: slightly warmer cream */
+    --card: 0.98 0.012 75;
+    --card-foreground: 0.22 0.04 55;
+
+    /* Popover */
+    --popover: 0.99 0.008 75;
+    --popover-foreground: 0.22 0.04 55;
+
+    /* Primary: saffron-gold */
+    --primary: 0.68 0.165 70;
+    --primary-foreground: 0.12 0.04 50;
+
+    /* Secondary: warm ivory */
+    --secondary: 0.93 0.02 75;
+    --secondary-foreground: 0.3 0.05 55;
+
+    /* Muted */
+    --muted: 0.92 0.018 75;
+    --muted-foreground: 0.5 0.04 60;
+
+    /* Accent: deep terracotta/earthy brown */
+    --accent: 0.45 0.09 45;
+    --accent-foreground: 0.97 0.01 75;
+
+    /* Destructive */
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 0.985 0 0;
+
+    /* Borders */
+    --border: 0.85 0.03 70;
+    --input: 0.88 0.025 70;
+    --ring: 0.68 0.165 70;
+
+    /* Charts */
+    --chart-1: 0.68 0.165 70;
+    --chart-2: 0.55 0.12 50;
+    --chart-3: 0.45 0.09 45;
+    --chart-4: 0.78 0.13 80;
+    --chart-5: 0.38 0.08 40;
+
+    /* Sidebar */
+    --sidebar: 0.95 0.02 72;
+    --sidebar-foreground: 0.22 0.04 55;
+    --sidebar-primary: 0.68 0.165 70;
+    --sidebar-primary-foreground: 0.12 0.04 50;
+    --sidebar-accent: 0.9 0.025 70;
+    --sidebar-accent-foreground: 0.22 0.04 55;
+    --sidebar-border: 0.85 0.03 70;
+    --sidebar-ring: 0.68 0.165 70;
+
+    /* Custom brand tokens */
+    --saffron: 0.72 0.175 72;
+    --saffron-deep: 0.58 0.16 60;
+    --cream: 0.97 0.015 80;
+    --cream-deep: 0.91 0.025 75;
+    --brown: 0.32 0.06 50;
+    --brown-light: 0.55 0.07 55;
+    --terracotta: 0.52 0.12 40;
+    --gold-border: 0.8 0.12 75;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "General Sans", sans-serif;
+  }
+}
+
+/* ========== ORNAMENTAL PATTERNS ========== */
+.ornament-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.ornament-divider::before,
+.ornament-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    oklch(var(--gold-border)),
+    transparent
+  );
+}
+
+.mandala-bg {
+  background-image: radial-gradient(
+      ellipse at 20% 20%,
+      oklch(var(--saffron) / 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 80% 80%,
+      oklch(var(--terracotta) / 0.06) 0%,
+      transparent 50%
+    );
+}
+
+/* Pattern overlay for sections */
+.traditional-pattern {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      oklch(var(--saffron) / 0.03) 10px,
+      oklch(var(--saffron) / 0.03) 11px
+    );
+}
+
+/* Ornamental border frame */
+.ornament-frame {
+  position: relative;
+}
+
+.ornament-frame::before {
+  content: "❋";
+  position: absolute;
+  top: -0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: oklch(var(--saffron));
+  font-size: 1.5rem;
+  background: oklch(var(--background));
+  padding: 0 0.5rem;
+}
